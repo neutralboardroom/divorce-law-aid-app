@@ -1,0 +1,211 @@
+name: Import exact Divorce Law Aid v0.66.0
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: divorce-law-aid-v0660-import
+  cancel-in-progress: false
+
+jobs:
+  import-exact-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Node 22
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version: '22.x'
+          package-manager-cache: false
+
+      - name: Verify, test, and import exact v0.66.0 artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="divorce-law-aid-v0.66.0.zip"
+          expected_sha="ae9ad14ae23bfd7d8218b95021f7dd9ba17e98eb14fa033d919c1b0645e07fb3"
+          expected_bytes="18459567"
+          expected_root="divorce-law-aid-v0.66.0"
+
+          if [ ! -f "$archive" ]; then
+            echo "Exact transport archive is not present; nothing to import."
+            exit 0
+          fi
+
+          test "$(sha256sum "$archive" | awk '{print $1}')" = "$expected_sha"
+          test "$(stat -c '%s' "$archive")" = "$expected_bytes"
+
+          extract="$RUNNER_TEMP/divorce-law-aid-extract"
+          stage="$extract/$expected_root"
+          rm -rf "$extract"
+          mkdir -p "$extract"
+
+          ARCHIVE="$archive" EXTRACT="$extract" EXPECTED_ROOT="$expected_root" python - <<'PY'
+          import os, stat, zipfile
+          from pathlib import Path, PurePosixPath
+
+          archive = Path(os.environ['ARCHIVE'])
+          extract = Path(os.environ['EXTRACT']).resolve()
+          expected_root = os.environ['EXPECTED_ROOT']
+
+          with zipfile.ZipFile(archive) as zf:
+              infos = zf.infolist()
+              if len(infos) != 4626:
+                  raise SystemExit(f'ZIP member count mismatch: {len(infos)}')
+              roots = set()
+              file_count = 0
+              for info in infos:
+                  name = info.filename
+                  path = PurePosixPath(name)
+                  if path.is_absolute() or '..' in path.parts or not path.parts:
+                      raise SystemExit(f'Unsafe ZIP member: {name}')
+                  roots.add(path.parts[0])
+                  mode = info.external_attr >> 16
+                  if stat.S_ISLNK(mode):
+                      raise SystemExit(f'ZIP symlink rejected: {name}')
+                  target = (extract / Path(*path.parts)).resolve()
+                  if extract not in target.parents and target != extract:
+                      raise SystemExit(f'ZIP path escape rejected: {name}')
+                  if not info.is_dir():
+                      file_count += 1
+              if roots != {expected_root}:
+                  raise SystemExit(f'Unexpected ZIP root set: {sorted(roots)}')
+              if file_count != 4138:
+                  raise SystemExit(f'ZIP file count mismatch: {file_count}')
+              zf.extractall(extract)
+          PY
+
+          test -d "$stage"
+          test "$(node -p "require('$stage/package.json').version")" = "0.66.0"
+          test -f "$stage/server.js"
+          test -f "$stage/package-lock.json"
+          test -f "$stage/public/index.html"
+          test -f "$stage/OWNER_RECEIPT.txt"
+          test -f "$stage/ARTIFACT_BINDING_AND_MODE_RECEIPT.json"
+          test "$(find "$stage" -type f | wc -l | tr -d ' ')" = "4138"
+          test "$(find "$stage/public" -type f -name '*.html' | wc -l | tr -d ' ')" = "546"
+          test "$(find "$stage" -type f -name '*.js' | wc -l | tr -d ' ')" = "223"
+          test "$(find "$stage" -type f -name '*.json' | wc -l | tr -d ' ')" = "2523"
+
+          STAGE="$stage" SNAPSHOT="$RUNNER_TEMP/source-before.json" python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          root = Path(os.environ['STAGE'])
+          rows = []
+          for path in sorted(root.rglob('*')):
+              if not path.is_file() or 'node_modules' in path.parts:
+                  continue
+              rel = path.relative_to(root).as_posix()
+              rows.append([rel, path.stat().st_size, hashlib.sha256(path.read_bytes()).hexdigest()])
+          Path(os.environ['SNAPSHOT']).write_text(json.dumps(rows, separators=(',', ':')))
+          PY
+
+          (
+            cd "$stage"
+            npm ci --ignore-scripts
+            npm test
+            npm run build
+            npm run audit
+            npm audit --omit=dev --audit-level=high
+            node scripts/scan-release-secrets.js
+          )
+
+          STAGE="$stage" SNAPSHOT="$RUNNER_TEMP/source-before.json" python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          root = Path(os.environ['STAGE'])
+          before = json.loads(Path(os.environ['SNAPSHOT']).read_text())
+          after = []
+          for path in sorted(root.rglob('*')):
+              if not path.is_file() or 'node_modules' in path.parts:
+                  continue
+              rel = path.relative_to(root).as_posix()
+              after.append([rel, path.stat().st_size, hashlib.sha256(path.read_bytes()).hexdigest()])
+          if before != after:
+              b = {row[0]: row[1:] for row in before}
+              a = {row[0]: row[1:] for row in after}
+              changed = [p for p in sorted(set(b) | set(a)) if b.get(p) != a.get(p)]
+              raise SystemExit('Build changed exact source tree: ' + ', '.join(changed[:50]))
+          print(f'Exact source tree remained unchanged: {len(after)} files')
+          PY
+
+          (
+            cd "$stage"
+            PORT=8788 DLA_ENVIRONMENT=staging node server.js > "$RUNNER_TEMP/divorce-law-aid-server.log" 2>&1 &
+            pid=$!
+            trap 'kill $pid 2>/dev/null || true' EXIT
+            ready=false
+            for i in $(seq 1 60); do
+              if curl -fsS http://127.0.0.1:8788/health > "$RUNNER_TEMP/health.json"; then
+                ready=true
+                break
+              fi
+              if ! kill -0 "$pid" 2>/dev/null; then
+                cat "$RUNNER_TEMP/divorce-law-aid-server.log"
+                exit 1
+              fi
+              sleep 1
+            done
+            test "$ready" = true
+
+            node -e "const h=require(process.env.RUNNER_TEMP+'/health.json');if(!h.ok||h.service!=='Divorce Law Aid'||h.version!=='0.66.0'||h.sensitiveTraffic!==false||h.deployed!==false||h.liveAccepted!==false||h.professionalHandoffConfigured!==false||h.publicProfiles!==465||h.billing?.state!=='CONTRACT_READY_NOT_CONNECTED'||h.ai?.openVerified!==false)process.exit(1)"
+
+            curl -fsS http://127.0.0.1:8788/ > "$RUNNER_TEMP/home.html"
+            grep -qi "Divorce Law Aid" "$RUNNER_TEMP/home.html"
+
+            curl -fsS http://127.0.0.1:8788/directory.html > "$RUNNER_TEMP/directory.html"
+            grep -qi "directory" "$RUNNER_TEMP/directory.html"
+
+            curl -fsS http://127.0.0.1:8788/api/profiles > "$RUNNER_TEMP/profiles.json"
+            node -e "const h=require(process.env.RUNNER_TEMP+'/profiles.json');if(h.total!==465||h.profiles.length!==465)process.exit(1)"
+
+            handoff_status="$(curl -sS -o "$RUNNER_TEMP/handoff.html" -w '%{http_code}' http://127.0.0.1:8788/professional-handoff/create)"
+            test "$handoff_status" = "503"
+            grep -qi "not open in this environment" "$RUNNER_TEMP/handoff.html"
+
+            curl -fsS http://127.0.0.1:8788/api/billing/membership/status > "$RUNNER_TEMP/billing-status.json"
+            node -e "const h=require(process.env.RUNNER_TEMP+'/billing-status.json');if(!h.ok||h.state!=='CONTRACT_READY_NOT_CONNECTED'||h.checkoutOpen!==false||h.entitlementVerified!==false||h.noStripeSecretInPortal!==true)process.exit(1)"
+
+            billing_status="$(curl -sS -X POST -H 'content-type: application/json' -d '{}' -o "$RUNNER_TEMP/billing-checkout.json" -w '%{http_code}' http://127.0.0.1:8788/api/billing/membership/checkout)"
+            test "$billing_status" = "503"
+            node -e "const h=require(process.env.RUNNER_TEMP+'/billing-checkout.json');if(h.state!=='CONTRACT_READY_NOT_CONNECTED'||h.providerRequestMade!==false||h.entitlementGranted!==false)process.exit(1)"
+
+            ai_status="$(curl -sS -X POST -H 'content-type: application/json' -d '{"stage":"preparing","children":"no","agreement":"some","safety":"no","goal":"questions"}' -o "$RUNNER_TEMP/ai.json" -w '%{http_code}' http://127.0.0.1:8788/api/ai/tools/divorce-preparation-summary)"
+            test "$ai_status" = "503"
+            node -e "const h=require(process.env.RUNNER_TEMP+'/ai.json');if(h.aiUsed!==false||h.fallback?.mode!=='deterministic-non-ai')process.exit(1)"
+
+            curl -sSI http://127.0.0.1:8788/ > "$RUNNER_TEMP/headers.txt"
+            grep -qi '^Content-Security-Policy:' "$RUNNER_TEMP/headers.txt"
+            grep -qi '^Strict-Transport-Security:' "$RUNNER_TEMP/headers.txt"
+            grep -qi '^X-DLA-Version: 0.66.0' "$RUNNER_TEMP/headers.txt"
+          )
+
+          find . -mindepth 1 -maxdepth 1 \
+            ! -name .git \
+            ! -name .github \
+            ! -name "$archive" \
+            -exec rm -rf {} +
+          rsync -a --exclude='.github/' --exclude='node_modules/' "$stage"/ ./
+          rm -f "$archive"
+
+          test "$(find . -path './.git' -prune -o -path './.github' -prune -o -type f -print | wc -l | tr -d ' ')" = "4137"
+          test "$(find public -type f -name '*.html' | wc -l | tr -d ' ')" = "546"
+          test "$(node -p "require('./package.json').version")" = "0.66.0"
+
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git diff --cached --quiet && { echo 'Importer produced no repository changes.'; exit 1; }
+          git commit -m "Import exact Divorce Law Aid v0.66.0 source"
+          git push origin HEAD:main

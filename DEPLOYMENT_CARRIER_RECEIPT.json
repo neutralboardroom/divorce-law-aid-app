@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "1.0.0",
+  "product": "Divorce Law Aid",
+  "productId": "divorce-law-aid",
+  "domain": "divorcelawaid.com",
+  "repository": "neutralboardroom/divorce-law-aid-app",
+  "sourceVersion": "0.87.0",
+  "sourceArtifact": {
+    "filename": "divorce-law-aid-v0.87.0.zip",
+    "sha256": "26336408cb5a3d3fd85cae7f5fb8df60aca02e68ad8e73caac52ea68bbe705a1",
+    "sizeBytes": 41849620,
+    "zipEntries": 7465,
+    "root": "divorce-law-aid-v0.87.0"
+  },
+  "qualification": {
+    "releaseTests": { "passed": 21, "failed": 0 },
+    "exactArtifact": "PASS",
+    "deterministicBuild": "PASS",
+    "applicationAudit": "PASS",
+    "localServerSmoke": "PASS",
+    "javascriptSyntax": "PASS",
+    "secretScan": "PASS",
+    "npmHighVulnerabilities": 0
+  },
+  "preservedClosedCapabilities": [
+    "external AI",
+    "payments",
+    "production voice",
+    "public uploads",
+    "sensitive traffic",
+    "global Spanish activation"
+  ],
+  "sourcePackagingExceptions": [
+    "owner-action:validate shortcut requires an input argument and is not used by this carrier",
+    "v0.87 deployment-readiness, data-continuity fixture, and English-Spanish gate files are absent; this carrier does not fabricate them or claim those closed gates passed"
+  ],
+  "deploymentMethod": "V40 exact-ZIP provider-equivalent bootstrap; sealed source qualified before runtime extraction",
+  "deploymentState": "WAITING_FOR_EXACT_ARTIFACT_UPLOAD_TO_DEPLOYMENT_BRANCH",
+  "liveVerified": false
+}

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.0.0",
+  "schemaVersion": "1.1.0",
   "product": "Divorce Law Aid",
   "productId": "divorce-law-aid",
   "domain": "divorcelawaid.com",
@@ -11,6 +11,23 @@
     "sizeBytes": 41849620,
     "zipEntries": 7465,
     "root": "divorce-law-aid-v0.87.0"
+  },
+  "sourceTransport": {
+    "mode": "VERIFIED_SPLIT_BINARY_CARRIER",
+    "reason": "GitHub browser upload rejects the complete 41.8 MB ZIP",
+    "parts": [
+      {
+        "filename": "divorce-law-aid-v0.87.0.zip.part01",
+        "sizeBytes": 20924810,
+        "sha256": "5b077b31ac4158f30df49d7169cdb731e33918d557c205c2c934a4311251c307"
+      },
+      {
+        "filename": "divorce-law-aid-v0.87.0.zip.part02",
+        "sizeBytes": 20924810,
+        "sha256": "6fcf7af80545cd2a44aa1e0c2325bbc980d1f5c604f0cde4043ccece38636c64"
+      }
+    ],
+    "reconstruction": "Concatenate part01 then part02 byte-for-byte and verify the original ZIP size and SHA-256 before extraction"
   },
   "qualification": {
     "releaseTests": { "passed": 21, "failed": 0 },
@@ -34,7 +51,7 @@
     "owner-action:validate shortcut requires an input argument and is not used by this carrier",
     "v0.87 deployment-readiness, data-continuity fixture, and English-Spanish gate files are absent; this carrier does not fabricate them or claim those closed gates passed"
   ],
-  "deploymentMethod": "V40 exact-ZIP provider-equivalent bootstrap; sealed source qualified before runtime extraction",
-  "deploymentState": "WAITING_FOR_EXACT_ARTIFACT_UPLOAD_TO_DEPLOYMENT_BRANCH",
+  "deploymentMethod": "V40 verified split exact-ZIP provider-equivalent bootstrap; sealed source qualified before runtime extraction",
+  "deploymentState": "WAITING_FOR_TWO_VERIFIED_SPLIT_PART_UPLOADS_TO_DEPLOYMENT_BRANCH",
   "liveVerified": false
 }

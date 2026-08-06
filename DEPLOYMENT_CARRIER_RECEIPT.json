@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.1.0",
+  "schemaVersion": "1.2.0",
   "product": "Divorce Law Aid",
   "productId": "divorce-law-aid",
   "domain": "divorcelawaid.com",
@@ -19,15 +19,20 @@
       {
         "filename": "divorce-law-aid-v0.87.0.zip.part01",
         "sizeBytes": 20924810,
-        "sha256": "5b077b31ac4158f30df49d7169cdb731e33918d557c205c2c934a4311251c307"
+        "sha256": "5b077b31ac4158f30df49d7169cdb731e33918d557c205c2c934a4311251c307",
+        "githubBlobSha": "635a5918f14d5c86db57fa3cd31ed68d9b7edf50",
+        "githubIdentityVerified": true
       },
       {
         "filename": "divorce-law-aid-v0.87.0.zip.part02",
         "sizeBytes": 20924810,
-        "sha256": "6fcf7af80545cd2a44aa1e0c2325bbc980d1f5c604f0cde4043ccece38636c64"
+        "sha256": "6fcf7af80545cd2a44aa1e0c2325bbc980d1f5c604f0cde4043ccece38636c64",
+        "githubBlobSha": "879356304e6a42494db7a30778620dc5cb5c7a49",
+        "githubIdentityVerified": true
       }
     ],
-    "reconstruction": "Concatenate part01 then part02 byte-for-byte and verify the original ZIP size and SHA-256 before extraction"
+    "reconstruction": "Concatenate part01 then part02 byte-for-byte and verify the original ZIP size and SHA-256 before extraction",
+    "reconstructedArtifactIdentity": "PASS"
   },
   "qualification": {
     "releaseTests": { "passed": 21, "failed": 0 },
@@ -37,7 +42,8 @@
     "localServerSmoke": "PASS",
     "javascriptSyntax": "PASS",
     "secretScan": "PASS",
-    "npmHighVulnerabilities": 0
+    "npmHighVulnerabilities": 0,
+    "providerEquivalentPreflight": "PASS"
   },
   "preservedClosedCapabilities": [
     "external AI",
@@ -52,6 +58,7 @@
     "v0.87 deployment-readiness, data-continuity fixture, and English-Spanish gate files are absent; this carrier does not fabricate them or claim those closed gates passed"
   ],
   "deploymentMethod": "V40 verified split exact-ZIP provider-equivalent bootstrap; sealed source qualified before runtime extraction",
-  "deploymentState": "WAITING_FOR_TWO_VERIFIED_SPLIT_PART_UPLOADS_TO_DEPLOYMENT_BRANCH",
+  "deploymentState": "BUILDER_WORK_COMPLETE_OWNER_RENDER_SERVICE_CREATION_REQUIRED",
+  "ownerAction": "CREATE_RENDER_WEB_SERVICE_FROM_MAIN",
   "liveVerified": false
 }

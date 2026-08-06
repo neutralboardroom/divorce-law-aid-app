@@ -8,16 +8,33 @@ const { spawnSync } = require('node:child_process');
 
 const repositoryRoot = path.resolve(__dirname, '..');
 const archiveName = 'divorce-law-aid-v0.87.0.zip';
-const archivePath = path.join(repositoryRoot, archiveName);
 const expectedSha256 = '26336408cb5a3d3fd85cae7f5fb8df60aca02e68ad8e73caac52ea68bbe705a1';
 const expectedSize = 41849620;
 const expectedRootName = 'divorce-law-aid-v0.87.0';
+const partDefinitions = [
+  {
+    name: 'divorce-law-aid-v0.87.0.zip.part01',
+    size: 20924810,
+    sha256: '5b077b31ac4158f30df49d7169cdb731e33918d557c205c2c934a4311251c307'
+  },
+  {
+    name: 'divorce-law-aid-v0.87.0.zip.part02',
+    size: 20924810,
+    sha256: '6fcf7af80545cd2a44aa1e0c2325bbc980d1f5c604f0cde4043ccece38636c64'
+  }
+];
+const carrierRoot = path.join(repositoryRoot, '.carrier');
+const archivePath = path.join(carrierRoot, archiveName);
 const runtimeRoot = path.join(repositoryRoot, '.runtime');
 const applicationRoot = path.join(runtimeRoot, expectedRootName);
 
 function fail(message) {
   console.error(`[divorce-law-aid-bootstrap] ${message}`);
   process.exit(1);
+}
+
+function digestFile(filePath) {
+  return crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex');
 }
 
 function run(command, args, options = {}) {
@@ -31,10 +48,40 @@ function run(command, args, options = {}) {
   return { ok: result.status === 0, status: result.status };
 }
 
-if (!fs.existsSync(archivePath)) fail(`missing exact artifact ${archiveName}`);
+function prepareExactArchive() {
+  const directArchive = path.join(repositoryRoot, archiveName);
+  fs.rmSync(carrierRoot, { recursive: true, force: true });
+  fs.mkdirSync(carrierRoot, { recursive: true });
+
+  if (fs.existsSync(directArchive)) {
+    fs.copyFileSync(directArchive, archivePath);
+    console.log('[divorce-law-aid-bootstrap] using direct exact ZIP carrier');
+    return;
+  }
+
+  const buffers = [];
+  for (const part of partDefinitions) {
+    const partPath = path.join(repositoryRoot, part.name);
+    if (!fs.existsSync(partPath)) fail(`missing split carrier part ${part.name}`);
+    const stat = fs.statSync(partPath);
+    if (stat.size !== part.size) {
+      fail(`split carrier part size mismatch for ${part.name}: expected ${part.size}, received ${stat.size}`);
+    }
+    const partDigest = digestFile(partPath);
+    if (partDigest !== part.sha256) {
+      fail(`split carrier part SHA-256 mismatch for ${part.name}: ${partDigest}`);
+    }
+    buffers.push(fs.readFileSync(partPath));
+  }
+
+  fs.writeFileSync(archivePath, Buffer.concat(buffers));
+  console.log('[divorce-law-aid-bootstrap] reconstructed exact ZIP from two verified browser-uploadable parts');
+}
+
+prepareExactArchive();
 const stat = fs.statSync(archivePath);
 if (stat.size !== expectedSize) fail(`artifact size mismatch: expected ${expectedSize}, received ${stat.size}`);
-const digest = crypto.createHash('sha256').update(fs.readFileSync(archivePath)).digest('hex');
+const digest = digestFile(archivePath);
 if (digest !== expectedSha256) fail(`artifact SHA-256 mismatch: ${digest}`);
 
 const preflightRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'dla-v087-provider-preflight-'));
@@ -105,6 +152,7 @@ const install = run('npm', ['ci', '--omit=dev', '--ignore-scripts', '--no-audit'
 });
 if (!install.ok) fail(`runtime locked install failed with status ${install.status ?? 'unknown'}`);
 
+fs.rmSync(carrierRoot, { recursive: true, force: true });
 console.log(`[divorce-law-aid-bootstrap] prepared exact Divorce Law Aid v${runtimePackage.version}`);
 console.log(`[divorce-law-aid-bootstrap] sealed artifact SHA-256 ${digest}`);
-console.log('[divorce-law-aid-bootstrap] exact-artifact, provider-equivalent, syntax, secret, and vulnerability gates passed');
+console.log('[divorce-law-aid-bootstrap] split-carrier, exact-artifact, provider-equivalent, syntax, secret, and vulnerability gates passed');

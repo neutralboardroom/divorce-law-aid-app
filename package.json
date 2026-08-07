@@ -1,8 +1,8 @@
 {
   "name": "divorce-law-aid-exact-release-bootstrap",
-  "version": "0.87.0",
+  "version": "0.90.0",
   "private": true,
-  "description": "Fail-closed Render bootstrap for the exact sealed Divorce Law Aid v0.87.0 artifact.",
+  "description": "Fail-closed Render bootstrap for the exact sealed Divorce Law Aid v0.90.0 artifact.",
   "engines": { "node": "22.x" },
   "scripts": {
     "postinstall": "node scripts/bootstrap-exact-release.js",

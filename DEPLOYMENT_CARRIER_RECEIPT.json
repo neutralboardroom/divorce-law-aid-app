@@ -1,45 +1,74 @@
 {
-  "schemaVersion": "1.2.0",
+  "schemaVersion": "1.3.0",
   "product": "Divorce Law Aid",
   "productId": "divorce-law-aid",
   "domain": "divorcelawaid.com",
   "repository": "neutralboardroom/divorce-law-aid-app",
-  "sourceVersion": "0.87.0",
+  "sourceVersion": "0.90.0",
   "sourceArtifact": {
-    "filename": "divorce-law-aid-v0.87.0.zip",
-    "sha256": "26336408cb5a3d3fd85cae7f5fb8df60aca02e68ad8e73caac52ea68bbe705a1",
-    "sizeBytes": 41849620,
-    "zipEntries": 7465,
-    "root": "divorce-law-aid-v0.87.0"
+    "filename": "divorce-law-aid-v0.90.0.zip",
+    "sha256": "35d00e17ea59ad5054b7c60a6cc583139996c653d441c323830bed809d430973",
+    "sizeBytes": 46761324,
+    "zipEntries": 7681,
+    "root": "divorce-law-aid-v0.90.0"
   },
   "sourceTransport": {
-    "mode": "VERIFIED_SPLIT_BINARY_CARRIER",
-    "reason": "GitHub browser upload rejects the complete 41.8 MB ZIP",
+    "mode": "VERIFIED_SIX_PART_BINARY_CARRIER",
+    "reason": "GitHub browser upload rejects the complete 46.8 MB ZIP",
     "parts": [
       {
-        "filename": "divorce-law-aid-v0.87.0.zip.part01",
-        "sizeBytes": 20924810,
-        "sha256": "5b077b31ac4158f30df49d7169cdb731e33918d557c205c2c934a4311251c307",
-        "githubBlobSha": "635a5918f14d5c86db57fa3cd31ed68d9b7edf50",
+        "filename": "divorce-law-aid-v0.90.0.zip.smallpart01",
+        "sizeBytes": 8000000,
+        "sha256": "c532ebcb156715041348d4ad72218283e37109213ae17e988ba46fa2bfb1925c",
+        "githubBlobSha": "7aea3176a8e4a8445c9ec1339c4c639d8b0ac551",
         "githubIdentityVerified": true
       },
       {
-        "filename": "divorce-law-aid-v0.87.0.zip.part02",
-        "sizeBytes": 20924810,
-        "sha256": "6fcf7af80545cd2a44aa1e0c2325bbc980d1f5c604f0cde4043ccece38636c64",
-        "githubBlobSha": "879356304e6a42494db7a30778620dc5cb5c7a49",
+        "filename": "divorce-law-aid-v0.90.0.zip.smallpart02",
+        "sizeBytes": 8000000,
+        "sha256": "1a34464ae15f15c727ee0421f110242b689128f0d0e0c091035b523f5314b1ca",
+        "githubBlobSha": "a0524abb5043ed757e30602175be90dca6516556",
+        "githubIdentityVerified": true
+      },
+      {
+        "filename": "divorce-law-aid-v0.90.0.zip.smallpart03",
+        "sizeBytes": 8000000,
+        "sha256": "51cbf9226ba4353c3229d82b86ad4a80685f9cdd7b34b014529b3b4b3f3fa718",
+        "githubBlobSha": "c027e358e756c88420dba9c57ecf9dcfdb92476e",
+        "githubIdentityVerified": true
+      },
+      {
+        "filename": "divorce-law-aid-v0.90.0.zip.smallpart04",
+        "sizeBytes": 8000000,
+        "sha256": "2cec1bb08883dab14c240c99bb77c1dd77ac7c8b0bbf5e9dde8697bc9db131e0",
+        "githubBlobSha": "83d7bd17d81d17245037e1af7a7b323086ab1ccb",
+        "githubIdentityVerified": true
+      },
+      {
+        "filename": "divorce-law-aid-v0.90.0.zip.smallpart05",
+        "sizeBytes": 8000000,
+        "sha256": "7f92aa2091c72bf473fbf41e88563c19432b10e707f3f41395ddb6d5a465e05d",
+        "githubBlobSha": "3b98ec76f6f4fc339dd7188d570501c4be57a111",
+        "githubIdentityVerified": true
+      },
+      {
+        "filename": "divorce-law-aid-v0.90.0.zip.smallpart06",
+        "sizeBytes": 6761324,
+        "sha256": "fa1d3cf18a887dc7ffdc814d40e0db7f397d6b523e8bc7e19d8c4206243ac953",
+        "githubBlobSha": "df3d808ea67819c10c388e6ced2a8a2062991397",
         "githubIdentityVerified": true
       }
     ],
-    "reconstruction": "Concatenate part01 then part02 byte-for-byte and verify the original ZIP size and SHA-256 before extraction",
+    "reconstruction": "Concatenate smallpart01 through smallpart06 byte-for-byte and verify the original ZIP size and SHA-256 before extraction",
     "reconstructedArtifactIdentity": "PASS"
   },
   "qualification": {
-    "releaseTests": { "passed": 21, "failed": 0 },
+    "releaseTests": { "passed": 18, "failed": 0 },
     "exactArtifact": "PASS",
     "deterministicBuild": "PASS",
     "applicationAudit": "PASS",
     "localServerSmoke": "PASS",
+    "v40Controls": "PASS",
     "javascriptSyntax": "PASS",
     "secretScan": "PASS",
     "npmHighVulnerabilities": 0,
@@ -50,15 +79,11 @@
     "payments",
     "production voice",
     "public uploads",
-    "sensitive traffic",
-    "global Spanish activation"
+    "sensitive traffic"
   ],
-  "sourcePackagingExceptions": [
-    "owner-action:validate shortcut requires an input argument and is not used by this carrier",
-    "v0.87 deployment-readiness, data-continuity fixture, and English-Spanish gate files are absent; this carrier does not fabricate them or claim those closed gates passed"
-  ],
-  "deploymentMethod": "V40 verified split exact-ZIP provider-equivalent bootstrap; sealed source qualified before runtime extraction",
-  "deploymentState": "BUILDER_WORK_COMPLETE_OWNER_RENDER_SERVICE_CREATION_REQUIRED",
-  "ownerAction": "CREATE_RENDER_WEB_SERVICE_FROM_MAIN",
+  "deploymentMethod": "V40 verified six-part exact-ZIP provider-equivalent bootstrap; sealed source qualified before runtime extraction",
+  "rollbackPredecessor": "divorce-law-aid-v0.87.0",
+  "deploymentState": "CARRIER_QUALIFIED_PENDING_MAIN_PROMOTION",
+  "ownerAction": "NO_CURRENT_OWNER_ACTION_REQUIRED",
   "liveVerified": false
 }

@@ -7,21 +7,17 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
 const repositoryRoot = path.resolve(__dirname, '..');
-const archiveName = 'divorce-law-aid-v0.87.0.zip';
-const expectedSha256 = '26336408cb5a3d3fd85cae7f5fb8df60aca02e68ad8e73caac52ea68bbe705a1';
-const expectedSize = 41849620;
-const expectedRootName = 'divorce-law-aid-v0.87.0';
+const archiveName = 'divorce-law-aid-v0.90.0.zip';
+const expectedSha256 = '35d00e17ea59ad5054b7c60a6cc583139996c653d441c323830bed809d430973';
+const expectedSize = 46761324;
+const expectedRootName = 'divorce-law-aid-v0.90.0';
 const partDefinitions = [
-  {
-    name: 'divorce-law-aid-v0.87.0.zip.part01',
-    size: 20924810,
-    sha256: '5b077b31ac4158f30df49d7169cdb731e33918d557c205c2c934a4311251c307'
-  },
-  {
-    name: 'divorce-law-aid-v0.87.0.zip.part02',
-    size: 20924810,
-    sha256: '6fcf7af80545cd2a44aa1e0c2325bbc980d1f5c604f0cde4043ccece38636c64'
-  }
+  { name: 'divorce-law-aid-v0.90.0.zip.smallpart01', size: 8000000, sha256: 'c532ebcb156715041348d4ad72218283e37109213ae17e988ba46fa2bfb1925c' },
+  { name: 'divorce-law-aid-v0.90.0.zip.smallpart02', size: 8000000, sha256: '1a34464ae15f15c727ee0421f110242b689128f0d0e0c091035b523f5314b1ca' },
+  { name: 'divorce-law-aid-v0.90.0.zip.smallpart03', size: 8000000, sha256: '51cbf9226ba4353c3229d82b86ad4a80685f9cdd7b34b014529b3b4b3f3fa718' },
+  { name: 'divorce-law-aid-v0.90.0.zip.smallpart04', size: 8000000, sha256: '2cec1bb08883dab14c240c99bb77c1dd77ac7c8b0bbf5e9dde8697bc9db131e0' },
+  { name: 'divorce-law-aid-v0.90.0.zip.smallpart05', size: 8000000, sha256: '7f92aa2091c72bf473fbf41e88563c19432b10e707f3f41395ddb6d5a465e05d' },
+  { name: 'divorce-law-aid-v0.90.0.zip.smallpart06', size: 6761324, sha256: 'fa1d3cf18a887dc7ffdc814d40e0db7f397d6b523e8bc7e19d8c4206243ac953' }
 ];
 const carrierRoot = path.join(repositoryRoot, '.carrier');
 const archivePath = path.join(carrierRoot, archiveName);
@@ -75,7 +71,7 @@ function prepareExactArchive() {
   }
 
   fs.writeFileSync(archivePath, Buffer.concat(buffers));
-  console.log('[divorce-law-aid-bootstrap] reconstructed exact ZIP from two verified browser-uploadable parts');
+  console.log('[divorce-law-aid-bootstrap] reconstructed exact ZIP from six verified browser-uploadable parts');
 }
 
 prepareExactArchive();
@@ -84,7 +80,7 @@ if (stat.size !== expectedSize) fail(`artifact size mismatch: expected ${expecte
 const digest = digestFile(archivePath);
 if (digest !== expectedSha256) fail(`artifact SHA-256 mismatch: ${digest}`);
 
-const preflightRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'dla-v087-provider-preflight-'));
+const preflightRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'dla-v090-provider-preflight-'));
 try {
   const probe = run('unzip', ['-q', archivePath, '-d', preflightRoot]);
   if (!probe.ok) fail('provider-equivalent extraction preflight failed');
@@ -92,18 +88,18 @@ try {
   const packagePath = path.join(probeApplication, 'package.json');
   if (!fs.existsSync(packagePath)) fail(`missing expected root ${expectedRootName}`);
   const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
-  if (pkg.name !== 'divorce-law-aid' || pkg.version !== '0.87.0') fail('internal product identity mismatch');
+  if (pkg.name !== 'divorce-law-aid' || pkg.version !== '0.90.0') fail('internal product identity mismatch');
   if (Object.keys(pkg.dependencies || {}).length !== 0) fail('unexpected runtime dependencies in sealed source');
 
   const exactArtifact = run(process.execPath, [
-    path.join(probeApplication, 'scripts', 'exact-artifact-test-v087.js'),
+    path.join(probeApplication, 'scripts', 'exact-artifact-test-v090.js'),
     archivePath
   ], { cwd: probeApplication });
   if (!exactArtifact.ok) fail(`exact-artifact qualification failed with status ${exactArtifact.status ?? 'unknown'}`);
 
   for (const script of [
-    'scripts/validate-v087-release.js',
-    'scripts/validate-v38-controls.js',
+    'scripts/validate-v090-release.js',
+    'scripts/validate-v40-controls.js',
     'scripts/check-js-syntax.js',
     'scripts/scan-release-secrets.js'
   ]) {
@@ -144,7 +140,7 @@ if (!extraction.ok) fail('safe runtime extraction failed');
 const runtimePackagePath = path.join(applicationRoot, 'package.json');
 if (!fs.existsSync(runtimePackagePath)) fail('runtime application root missing after extraction');
 const runtimePackage = JSON.parse(fs.readFileSync(runtimePackagePath, 'utf8'));
-if (runtimePackage.name !== 'divorce-law-aid' || runtimePackage.version !== '0.87.0') fail('runtime identity mismatch');
+if (runtimePackage.name !== 'divorce-law-aid' || runtimePackage.version !== '0.90.0') fail('runtime identity mismatch');
 
 const install = run('npm', ['ci', '--omit=dev', '--ignore-scripts', '--no-audit', '--no-fund'], {
   cwd: applicationRoot,
@@ -155,4 +151,4 @@ if (!install.ok) fail(`runtime locked install failed with status ${install.statu
 fs.rmSync(carrierRoot, { recursive: true, force: true });
 console.log(`[divorce-law-aid-bootstrap] prepared exact Divorce Law Aid v${runtimePackage.version}`);
 console.log(`[divorce-law-aid-bootstrap] sealed artifact SHA-256 ${digest}`);
-console.log('[divorce-law-aid-bootstrap] split-carrier, exact-artifact, provider-equivalent, syntax, secret, and vulnerability gates passed');
+console.log('[divorce-law-aid-bootstrap] six-part carrier, exact-artifact, V40, provider-equivalent, syntax, secret, and vulnerability gates passed');

@@ -1,0 +1,27 @@
+name: Export sealed v0.87.0 carrier
+on:
+  push:
+    branches:
+      - agent/v090-deploy-prep
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Reconstruct and verify exact v0.87.0 artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat divorce-law-aid-v0.87.0.zip.part01 divorce-law-aid-v0.87.0.zip.part02 > divorce-law-aid-v0.87.0.zip
+          test "$(stat -c %s divorce-law-aid-v0.87.0.zip)" = "41849620"
+          echo "26336408cb5a3d3fd85cae7f5fb8df60aca02e68ad8e73caac52ea68bbe705a1  divorce-law-aid-v0.87.0.zip" | sha256sum -c -
+      - name: Upload exact carrier artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: divorce-law-aid-v0.87.0-exact
+          path: divorce-law-aid-v0.87.0.zip
+          if-no-files-found: error
+          retention-days: 1
